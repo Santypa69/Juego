@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Past Simple Typing Game</title>
+    <style>
+        /* Estilos aquí... */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 150vh;
+            margin: 0;
+            background-image: url(imagenes/fondo1.jpg);
+            background-size: cover;
+            color: #885c5c;
+            position: relative;
+        }
+        #container {
+            display: flex;
+            align-items: center;
+        }
+        #loginScreen {
+            text-align: center;
+            background: #57595e;
+            border: 2px solid #000;
+            padding: 20px;
+            border-radius: 80px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            margin: 10px;
+            width: 300px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #ffffff;
+        }
+        input[type="text"], input[type="password"] {
+            width: 90%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 2px solid #57595e;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #2f3136;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 95%;
+        }
+        button:hover {
+            background-color: #1e2d6b;
+        }
+        #infoButton {
+            margin-top: 10px;
+            width: 50%;
+        }
+        canvas {
+            background-color: #2f3136;
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        #currentWord {
+            font-size: 32px;
+            font-weight: bold;
+            color: red;
+            margin-top: 20px;
+        }
+        #spaceship {
+            width: 50px;
+            height: 50px;
+            background-color: #972fd3;
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+            position: absolute;
+            bottom: 300px;
+            left: 50%;
+            transform: translate(-50%, 0);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 6cm;
+        }
+        /* Estilos del modal */
+        #modal, #infoModal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        #modalContent, #infoModalContent {
+            background: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+        #closeModal, #closeInfoModal {
+            background-color: #d32f2f;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="spaceship"></div>
+
+    <div id="container">
+        <div id="loginScreen">
+            <h1>Login</h1>
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button id="loginButton">Login</button>
+            <button id="infoButton">¿Qué es el presente simple?</button>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600" style="display: none;"></canvas>
+    <div id="gameInfo" style="display: none;">
+        <p id="currentWord"></p>
+        <p>Puntuación: <span id="score">0</span></p>
+        <p>Vidas: <span id="lives">3</span></p>
+    </div>
+
+    <!-- Modal para el presente simple -->
+    <div id="modal">
+        <div id="modalContent">
+            <h2>What is the Simple Present?</h2>
+            <p>The simple present is used to describe habitual actions or general truths.</p>
+            <p>It is formed by using the subject followed by the base form of the verb. For the third person singular (he, she, it), an <strong>-s</strong> or <strong>-es</strong> is added to the verb.</p>
+            <p>Examples:</p>
+            <ul>
+                <li><strong>I walk</strong> to school.</li>
+                <li><strong>He walks</strong> to school.</li>
+                <li><strong>She watches</strong> TV in the evening.</li>
+            </ul>
+            <button id="closeModal">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal para el presente simple negativo -->
+    <div id="infoModal">
+        <div id="infoModalContent">
+            <h2>What is the Simple Present Negative?</h2>
+            <p>The simple present negative is used to describe actions that do not happen.</p>
+            <p>It is formed by using <strong>do not</strong> or <strong>does not</strong> followed by the base form of the verb.</p>
+            <p>Examples:</p>
+            <ul>
+                <li><strong>I do not walk</strong> to school.</li>
+                <li><strong>He does not watch</strong> TV in the evening.</li>
+                <li><strong>They do not play</strong> soccer on the weekends.</li>
+            </ul>
+            <button id="closeInfoModal">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const screenWidth = canvas.width;
+        const screenHeight = canvas.height;
+
+        const colors = {
+            black: 'black',
+            red: 'red'
+        };
+
+        const fontSize = 24;
+        ctx.font = `${fontSize}px sans-serif`;
+
+        const presentSimpleWords = [
+
+        "walks", "talks", "plays", "watches", "cooks",
+        "loves", "hates", "jumps", "cries", "laughs",
+        "studies", "visits", "cleans", "wants", "helps",
+        "tries", "asks", "answers", "listens", "works"
+    ];
+    
+
+        const presentSimpleNegativeWords = [
+            "do not walk", "do not talk", "do not play", "do not watch", "do not cook",
+            "do not love", "do not hate", "do not jump", "do not cry", "do not laugh",
+            "do not study", "do not visit", "do not clean", "do not want", "do not help",
+            "do not try", "do not ask", "do not answer", "do not listen", "do not work"
+        ];
+
+        let currentLevel = 1;
+
+        class Word {
+            constructor(text) {
+                this.text = text;
+                this.x = Math.random() * (screenWidth - ctx.measureText(text).width); 
+                this.y = -fontSize; 
+                this.speed = 0.5 + Math.random(); // Velocidad reducida
+                this.width = ctx.measureText(this.text).width;
+                this.height = fontSize;
+            }
+
+            move() {
+                this.y += this.speed; 
+            }
+
+            draw() {
+                ctx.fillStyle = colors.black;
+                ctx.fillText(this.text, this.x, this.y);
+            }
+
+            isColliding(spaceship) {
+                return (
+                    this.y + this.height > screenHeight - 100 &&
+                    this.x < spaceship.x + spaceship.width &&
+                    this.x + this.width > spaceship.x
+                );
+            }
+        }
+
+        class Game {
+            constructor() {
+                this.words = [];
+                this.typedWord = "";
+                this.score = 0;
+                this.lives = 3;
+                this.running = false;
+                this.paused = false;
+                this.spaceship = {
+                    x: screenWidth / 2 - 25,
+                    y: screenHeight - 100,
+                    width: 50,
+                    height: 50
+                };
+                this.addWord();
+            }
+
+            addWord() {
+                let wordList = presentSimpleWords;
+                if (this.score >= 10) {
+                    wordList = presentSimpleNegativeWords;
+                }
+                const word = wordList[Math.floor(Math.random() * wordList.length)];
+                this.words.push(new Word(word));
+            }
+
+            update() {
+                ctx.clearRect(0, 0, screenWidth, screenHeight);
+                
+                this.words.forEach((word, index) => {
+                    word.move();
+                    word.draw();
+
+                    if (word.isColliding(this.spaceship)) {
+                        this.lives--;
+                        this.words.splice(index, 1);
+                        this.addWord();
+                    }
+
+                    if (word.y > screenHeight) {
+                        this.words.splice(index, 1);
+                        this.addWord();
+                    }
+
+                    if (this.typedWord === word.text) {
+                        this.score++;
+                        this.words.splice(index, 1);
+                        this.addWord();
+                        this.typedWord = "";
+
+                        // Mostrar el modal de presente simple negativo después de 10 puntos
+                        if (this.score === 10) {
+                            this.paused = true; 
+                            document.getElementById('infoModal').style.display = 'block';
+                            return; 
+                        }
+                    }
+                });
+
+                document.getElementById("score").textContent = this.score;
+                document.getElementById("lives").textContent = this.lives;
+
+                if (this.lives <= 0) {
+                    this.running = false;
+                }
+
+                if (this.words.length > 0) {
+                    document.getElementById("currentWord").textContent = this.words[0].text;
+                }
+            }
+
+            start() {
+                this.running = true;
+                this.loop();
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('gameInfo').style.display = 'block';
+                document.getElementById('gameCanvas').style.display = 'block';
+            }
+
+            loop() {
+                if (this.running && !this.paused) { 
+                    this.update();
+                    requestAnimationFrame(() => this.loop());
+                } else if (!this.running) {
+                    ctx.fillText("Fin del juego", screenWidth / 2 - 50, screenHeight / 2);
+                }
+            }
+        }
+
+        const game = new Game();
+
+        document.getElementById('loginButton').addEventListener('click', () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (username && password) {
+                game.start();
+            } else {
+                alert('Por favor, complete ambos campos.');
+            }
+        });
+
+        document.getElementById('infoButton').addEventListener('click', () => {
+            document.getElementById('modal').style.display = 'block';
+        });
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('modal').style.display = 'none';
+        });
+
+        document.getElementById('closeInfoModal').addEventListener('click', () => {
+            document.getElementById('infoModal').style.display = 'none';
+            game.paused = false; // Reanuda el juego al cerrar el modal
+            game.typedWord = ""; // Reinicia la palabra escrita
+            game.addWord(); // Agrega una nueva palabra
+            game.loop(); // Asegúrate de que el loop del juego siga ejecutándose
+        });
+
+        window.addEventListener('keydown', (event) => {
+            if (!game.running || game.paused) return; 
+
+            if (event.key === 'Backspace') {
+                game.typedWord = game.typedWord.slice(0, -1);
+            } else if (/^[a-zA-Z ]$/.test(event.key)) { 
+                game.typedWord += event.key;
+            }
+        });
+
+        setInterval(() => {
+            if (game.running && !game.paused) {
+                game.addWord();
+            }
+        }, 7000); // Aumenta el tiempo a 4000 ms
+    </script>
+</body>
+</html>
